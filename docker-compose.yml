@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  app:
+    #build:
+      #context: .
+      #dockerfile: Dockerfile
+      #args:
+        #ENV_FILE: .env
+    image: selvakumaru/tradeschool:latest
+    container_name: tradeschool
+    networks:
+      - laravel
+    restart: unless-stopped
+    volumes:
+      - ./storage:/var/www/storage
+      - ./bootstrap/cache:/var/www/bootstrap/cache
+      - ./database:/var/www/database
+
+  web:
+    image: nginx:alpine
+    container_name: tradeschoolnginx
+    ports:
+      - "3001:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/public:ro
+    depends_on:
+      - app
+    networks:
+      - laravel
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: tradeschoolredis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - laravel
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  queue:
+    image: selvakumaru/tradeschool:latest
+    container_name: tradeschoolqueue
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    depends_on:
+      - app
+      - redis
+    networks:
+      - laravel
+    restart: unless-stopped
+    volumes:
+      - ./storage:/var/www/storage
+      - ./bootstrap/cache:/var/www/bootstrap/cache
+      - ./database:/var/www/database
+
+  # Optional: Database migration service (run once)
+  migrate:
+    image: selvakumaru/tradeschool:latest
+    container_name: tradeschool-migrate
+    command: php artisan migrate --force
+    volumes:
+      - ./database:/var/www/database
+    depends_on:
+      - app
+    networks:
+      - laravel
+    restart: "no"
+    profiles:
+      - setup
+
+networks:
+  laravel:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
