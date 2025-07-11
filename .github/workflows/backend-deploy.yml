@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          DOCKER_BUILDKIT=0 docker build --no-cache --build-arg ENV_FILE=.env -t $IMAGE_NAME:$TAG .
+          docker build --no-cache -t $IMAGE_NAME:$TAG .
           docker push $IMAGE_NAME:$TAG
 
       - name: Set up SSH key

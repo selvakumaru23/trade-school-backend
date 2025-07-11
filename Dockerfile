@@ -24,8 +24,7 @@ RUN composer install  --no-interaction --prefer-dist --optimize-autoloader --no-
 COPY . .
 
 # Copy environment file (create .env.production with your settings)
-ARG ENV_FILE=.env
-COPY ${ENV_FILE} .env
+COPY .env .env
 
 # Create Laravel required directories
 RUN mkdir -p storage/logs storage/framework/{cache,sessions,views} bootstrap/cache database
